@@ -153,6 +153,10 @@ module VSphereCloud
           # Add vm to VMGroup
           add_vm_to_vm_group(vm_config, created_vm.mob, cluster)
 
+          #create VM/Host affinity rule
+          create_vm_host_affinity_rule(vm_config, created_vm.mob, cluster)
+
+
           begin
             # Upgrade to latest virtual hardware version
             # We decide to upgrade hardware version on basis of two params
@@ -215,6 +219,19 @@ module VSphereCloud
         cluster.mob
       )
       vm_group.add_vm_to_vm_group(vm_mob, vm_config.vm_type.vm_group)
+    end
+
+    def create_vm_host_affinity_rule(vm_config, vm_mob, cluster)
+      # TODO: default vm_group and vm_host_affinity_rule to some default name if we decide to make those optional
+      # If optional we should have a constant name for vm_group and the rul
+      return if vm_config.vm_type.host_group.nil? || vm_config.vm_type.vm_group.nil? || vm_config.vm_type.vm_host_affinity_rule_name.nil?
+      drs_rule = VSphereCloud::DrsRule.new(
+        vm_config.vm_type.vm_host_affinity_rule_name,
+        @client,
+        @cloud_searcher,
+        cluster.mob
+      )
+      drs_rule.add_vm_host_affinity_rule(vm_mob, vm_config.vm_type.vm_group, vm_config.vm_type.host_group)
     end
   end
 end
