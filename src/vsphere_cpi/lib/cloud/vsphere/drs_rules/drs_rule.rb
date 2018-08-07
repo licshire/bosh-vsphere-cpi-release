@@ -37,7 +37,7 @@ module VSphereCloud
     # @params [String] vm_group_name
     # @params [String] host_group_name
     def add_vm_host_affinity_rule(vm, vm_group_name, host_group_name)
-      DrsLock.new(@vm_attribute_manager).with_drs_lock do
+      DrsLock.new(@vm_attribute_manager, DRS_LOCK_SUFFIX_VMGROUP ).with_drs_lock do
         add_vm_to_vm_group(vm, vm_group_name)
         rule = find_rule
         # Do not create the rule if it already exists

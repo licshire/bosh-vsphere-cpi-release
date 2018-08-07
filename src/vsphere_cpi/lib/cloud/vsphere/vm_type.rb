@@ -42,11 +42,11 @@ module VSphereCloud
     end
 
     def host_group
-      gpu['host_group'] if gpu
+      gpu&.dig('host_group')
     end
 
     def vm_host_affinity_rule_name
-      gpu['vm_host_affinity_rule_name'] if gpu
+      gpu&.dig('vm_host_affinity_rule_name')
     end
   end
 end
