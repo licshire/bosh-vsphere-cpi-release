@@ -153,7 +153,7 @@ module VSphereCloud
           # Add vm to VMGroup
           add_vm_to_vm_group(vm_config, created_vm.mob, cluster)
 
-          #create VM/Host affinity rule
+          # Create VM/Host affinity rule
           create_vm_host_affinity_rule(vm_config, created_vm.mob, cluster)
 
 
@@ -224,7 +224,8 @@ module VSphereCloud
     def create_vm_host_affinity_rule(vm_config, vm_mob, cluster)
       return if vm_config.vm_type.host_group.nil? || vm_config.vm_type.vm_group.nil?
       default_rule_name = vm_config.vm_type.vm_group + '-' + vm_config.vm_type.host_group
-      vm_host_affinity_rule_name = vm_config.vm_type.vm_host_affinity_rule_name.nil? ? default_rule_name : vm_config.vm_type.vm_host_affinity_rule_name
+      provided_rule_name = vm_config.vm_type.vm_host_affinity_rule_name
+      vm_host_affinity_rule_name = provided_rule_name.nil? ? default_rule_name : provided_rule_name
       drs_rule = VSphereCloud::DrsRule.new(
         vm_host_affinity_rule_name,
         @client,
