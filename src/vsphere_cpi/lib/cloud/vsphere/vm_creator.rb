@@ -139,22 +139,27 @@ module VSphereCloud
           env = @cpi.generate_agent_env(vm_config.name, created_vm.mob, vm_config.agent_id, network_env, disk_env)
           env['env'] = vm_config.agent_env
 
-        location = {
-          datacenter: @datacenter.name,
-          datastore: datastore,
-          vm: vm_config.name,
-        }
+          location = {
+            datacenter: @datacenter.name,
+            datastore: datastore,
+            vm: vm_config.name,
+          }
 
           @agent_env.set_env(created_vm.mob, location, env)
 
           # DRS Rules
           create_drs_rules(vm_config, created_vm.mob, cluster)
 
-          # Add vm to VMGroup
-          add_vm_to_vm_group(vm_config, created_vm.mob, cluster)
+          # Add vm to VM Group present in vm_type
+          add_vm_to_vm_group(vm_config.vm_type.vm_group, created_vm_mob, cluster)
 
-          # Create VM/Host affinity rule
-          create_vm_host_affinity_rule(vm_config, created_vm.mob, cluster)
+          unless cluster.host_group.nil? || cluster.vm_group.nil?
+            # Add vm to VMGroup listed in the cluster description
+            # @TA:TODO : Why do we even need a cluster.vm_group. It can be same name as cluster+ some suffix.
+            add_vm_to_vm_group(cluster.vm_group, created_vm.mob, cluster)
+            # Create VM/Host affinity rule
+            create_vm_host_affinity_rule(created_vm.mob, cluster)
+          end
 
 
           begin
@@ -212,26 +217,28 @@ module VSphereCloud
       drs_rule.add_vm(vm_mob)
     end
 
-    def add_vm_to_vm_group(vm_config, vm_mob, cluster)
-      return if vm_config.vm_type.vm_group.nil?
-      vm_group = VSphereCloud::VmGroup.new(
+    def add_vm_to_vm_group(vm_group, vm_mob, cluster)
+      return if vm_group.nil?
+      vm_group_creator = VSphereCloud::VmGroup.new(
         @client,
         cluster.mob
       )
-      vm_group.add_vm_to_vm_group(vm_mob, vm_config.vm_type.vm_group)
+      vm_group_creator.add_vm_to_vm_group(vm_mob, vm_group)
     end
 
-    def create_vm_host_affinity_rule(vm_config, vm_mob, cluster)
-      return if vm_config.vm_type.host_group.nil? || vm_config.vm_type.vm_group.nil?
-      default_rule_name = vm_config.vm_type.vm_group + '-' + vm_config.vm_type.host_group
-      provided_rule_name = vm_config.vm_type.vm_host_affinity_rule_name
+    def create_vm_host_affinity_rule(vm_mob, cluster)
+      # @TA:TODO Do we need to check this at all now. Since we call this function only when these things are there
+      # What's the right place for this code to be.
+      return if cluster.host_group.nil? || cluster.vm_group.nil?
+      default_rule_name = cluster.vm_group + '-' + cluster.host_group
+      provided_rule_name = cluster.vm_host_affinity_rule_name
       vm_host_affinity_rule_name = provided_rule_name.nil? ? default_rule_name : provided_rule_name
       drs_rule = VSphereCloud::DrsRule.new(
         vm_host_affinity_rule_name,
         @client,
         cluster.mob
       )
-      drs_rule.add_vm_host_affinity_rule(vm_mob, vm_config.vm_type.vm_group, vm_config.vm_type.host_group)
+      drs_rule.add_vm_host_affinity_rule(vm_mob, cluster.vm_group, cluster.host_group)
     end
   end
 end

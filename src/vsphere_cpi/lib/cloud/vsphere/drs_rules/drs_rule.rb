@@ -87,6 +87,9 @@ module VSphereCloud
       vm_host_rule_info.vm_group_name = vm_group_name
       vm_host_rule_info.affine_host_group_name = host_group_name
 
+      require 'pry-byebug'
+      binding.pry
+
       cluster_rule_spec = VimSdk::Vim::Cluster::RuleSpec.new
       cluster_rule_spec.info = vm_host_rule_info
       cluster_rule_spec.operation = VimSdk::Vim::Option::ArrayUpdateSpec::Operation::ADD

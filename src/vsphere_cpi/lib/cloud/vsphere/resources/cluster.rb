@@ -51,6 +51,12 @@ module VSphereCloud
         end
       end
 
+      %w[vm_group host_group vm_host_affinity_rule_name].each do |method_name|
+        define_method(method_name) do
+          config.public_send(method_name) if config.respond_to? method_name
+        end
+      end
+
       # @return [String] cluster name.
       def name
         config.name
